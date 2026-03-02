@@ -1,2 +1,2 @@
-# xcm-interview-notes
-xcm的面试指南
+# xcm-notes
+xcm的笔记
