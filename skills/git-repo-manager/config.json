@@ -1,5 +1,6 @@
 {
-  "repoUrl": "https://github.com/wzxch/xcm-interview-notes",
+  "repoUrl": "https://github.com/wzxch/xcm-notes",
   "localPath": "/root/.openclaw/workspace/repos/xcm-interview-notes",
-  "token": "your-github-token"
+  "token": "your-github-token",
+  "username": "your-username"
 }

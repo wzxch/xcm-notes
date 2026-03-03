@@ -8,9 +8,40 @@
  */
 
 const GITHUB_API = 'https://api.github.com';
+const fs = require('fs').promises;
+const path = require('path');
 
 // 模块级配置存储
 let moduleConfig = null;
+
+/**
+ * 从配置文件读取配置
+ * @param {string} configPath - 配置文件路径
+ * @returns {Promise<Object|null>} 配置对象
+ */
+async function loadConfigFromFile(configPath) {
+  try {
+    const content = await fs.readFile(configPath, 'utf-8');
+    const config = JSON.parse(content);
+    
+    // 转换 git-repo-manager 配置格式到 github-notes 格式
+    if (config.repoUrl && config.token && config.username) {
+      // 从 repoUrl 提取 owner/repo
+      const urlMatch = config.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?$/);
+      if (urlMatch) {
+        return {
+          token: config.token,
+          repo: `${urlMatch[1]}/${urlMatch[2]}`,
+          username: config.username,
+          authorName: config.authorName || 'GitHub Notes Bot'
+        };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * 初始化配置
@@ -48,13 +79,21 @@ function getConfigFromEnv() {
 }
 
 /**
- * 获取当前配置（优先使用 init() 设置的配置，否则从环境变量读取）
- * @returns {Object} 配置对象
+ * 获取当前配置（优先级：init() > 配置文件 > 环境变量）
+ * @returns {Promise<Object>} 配置对象
  */
-function getConfig() {
+async function getConfig() {
   if (moduleConfig) {
     return moduleConfig;
   }
+  
+  // 尝试从配置文件读取
+  const configPath = path.join(__dirname, '..', 'git-repo-manager', 'config.json');
+  const fileConfig = await loadConfigFromFile(configPath);
+  if (fileConfig) {
+    return fileConfig;
+  }
+  
   return getConfigFromEnv();
 }
 
@@ -76,7 +115,7 @@ function getHeaders(token) {
  * @returns {Promise<string|null>} 文件内容，不存在返回 null
  */
 async function readFile(path, branch = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const encodedPath = encodeURIComponent(path);
   const url = `${GITHUB_API}/repos/${repo}/contents/${encodedPath}?ref=${branch}`;
 
@@ -114,7 +153,7 @@ async function readFile(path, branch = 'main') {
  * @returns {Promise<Array>} 文件和目录列表
  */
 async function listDirectory(path = '', branch = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const encodedPath = path ? encodeURIComponent(path) : '';
   const url = `${GITHUB_API}/repos/${repo}/contents/${encodedPath}?ref=${branch}`;
 
@@ -148,7 +187,7 @@ async function listDirectory(path = '', branch = 'main') {
  * @returns {Promise<string|null>} 文件 SHA，不存在返回 null
  */
 async function getFileSha(path, branch = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const encodedPath = encodeURIComponent(path);
   const url = `${GITHUB_API}/repos/${repo}/contents/${encodedPath}?ref=${branch}`;
 
@@ -182,7 +221,7 @@ async function getFileSha(path, branch = 'main') {
  * @returns {Promise<Object>} 创建/更新结果
  */
 async function createOrUpdateFile(path, content, message, branch = 'main') {
-  const { token, repo, authorName } = getConfig();
+  const { token, repo, authorName } = await getConfig();
   const encodedPath = encodeURIComponent(path);
   const url = `${GITHUB_API}/repos/${repo}/contents/${encodedPath}`;
 
@@ -227,7 +266,7 @@ async function createOrUpdateFile(path, content, message, branch = 'main') {
  * @returns {Promise<string>} 分支 SHA
  */
 async function getBranchSha(branch = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const url = `${GITHUB_API}/repos/${repo}/git/ref/heads/${branch}`;
 
   const response = await fetch(url, {
@@ -251,7 +290,7 @@ async function getBranchSha(branch = 'main') {
  * @returns {Promise<Object>} 创建结果
  */
 async function createBranch(branchName, baseBranch = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const url = `${GITHUB_API}/repos/${repo}/git/refs`;
 
   // 获取基础分支的 SHA
@@ -289,7 +328,7 @@ async function createBranch(branchName, baseBranch = 'main') {
  * @returns {Promise<Object>} PR 对象
  */
 async function createPullRequest(head, title, body, base = 'main') {
-  const { token, repo } = getConfig();
+  const { token, repo } = await getConfig();
   const url = `${GITHUB_API}/repos/${repo}/pulls`;
 
   const requestBody = {

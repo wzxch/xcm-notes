@@ -4,7 +4,7 @@ GitHub API 操作工具，用于读取、创建和更新 GitHub 仓库中的 Mar
 
 ## 配置方式
 
-支持两种配置方式，**推荐方式一**：
+支持三种配置方式，**推荐方式一**：
 
 ### 方式一：使用 init() 方法（推荐）
 
@@ -20,7 +20,22 @@ github.init({
 });
 ```
 
-### 方式二：环境变量（向后兼容）
+### 方式二：配置文件（自动读取）
+
+在 `git-repo-manager/config.json` 中配置：
+
+```json
+{
+  "repoUrl": "https://github.com/wzxch/xcm-notes",
+  "localPath": "/path/to/repo",
+  "token": "ghp_xxxxxxxx",
+  "username": "your_username"
+}
+```
+
+`github-notes` 会自动读取该配置文件。
+
+### 方式三：环境变量（向后兼容）
 
 ```bash
 export GITHUB_TOKEN="ghp_xxxxxxxx"      # GitHub Personal Access Token
