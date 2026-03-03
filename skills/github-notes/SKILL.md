@@ -2,15 +2,31 @@
 
 GitHub API 操作工具，用于读取、创建和更新 GitHub 仓库中的 Markdown 笔记文件。
 
-## 配置
+## 配置方式
 
-在使用前，需要配置以下环境变量：
+支持两种配置方式，**推荐方式一**：
+
+### 方式一：使用 init() 方法（推荐）
+
+```javascript
+const github = require('./github-notes');
+
+// 初始化配置
+github.init({
+  token: 'ghp_xxxxxxxx',      // GitHub Personal Access Token
+  repo: 'owner/repo',          // 仓库名，如：wzxch/xcm-notes
+  username: 'your_username',   // GitHub 用户名
+  authorName: 'Your Name'      // Git commit 作者名（可选）
+});
+```
+
+### 方式二：环境变量（向后兼容）
 
 ```bash
 export GITHUB_TOKEN="ghp_xxxxxxxx"      # GitHub Personal Access Token
-export GITHUB_REPO="owner/repo"          # 仓库名，如：wzxch/xcm-interview-notes
+export GITHUB_REPO="owner/repo"          # 仓库名，如：wzxch/xcm-notes
 export GITHUB_USERNAME="your_username"   # GitHub 用户名
-export GITHUB_AUTHOR_NAME="Your Name"    # Git commit 作者名
+export GITHUB_AUTHOR_NAME="Your Name"    # Git commit 作者名（可选）
 ```
 
 ## 功能
@@ -18,36 +34,34 @@ export GITHUB_AUTHOR_NAME="Your Name"    # Git commit 作者名
 ### 1. 读取文件
 
 ```javascript
-const { readFile } = require('./github-notes');
-const content = await readFile('java/jvm-gc.md');
+const github = require('./github-notes');
+github.init({ token: 'ghp_xxx', repo: 'wzxch/xcm-notes', username: 'wzxch' });
+
+const content = await github.readFile('java/jvm-gc.md');
 ```
 
 ### 2. 列出目录
 
 ```javascript
-const { listDirectory } = require('./github-notes');
-const files = await listDirectory('java');
+const files = await github.listDirectory('java');
 ```
 
 ### 3. 创建/更新文件
 
 ```javascript
-const { createOrUpdateFile } = require('./github-notes');
-await createOrUpdateFile('java/new-topic.md', '# 新主题\n\n内容...', '添加新主题笔记');
+await github.createOrUpdateFile('java/new-topic.md', '# 新主题\n\n内容...', '添加新主题笔记');
 ```
 
 ### 4. 创建临时分支
 
 ```javascript
-const { createBranch } = require('./github-notes');
-await createBranch('note-jvm-gc-20250225');
+await github.createBranch('note-jvm-gc-20250225');
 ```
 
 ### 5. 创建 Pull Request
 
 ```javascript
-const { createPullRequest } = require('./github-notes');
-const pr = await createPullRequest('note-jvm-gc-20250225', 'Add: jvm-gc-20250225', '添加 JVM GC 笔记');
+const pr = await github.createPullRequest('note-jvm-gc-20250225', 'Add: jvm-gc-20250225', '添加 JVM GC 笔记');
 console.log(pr.html_url);
 ```
 
@@ -56,10 +70,18 @@ console.log(pr.html_url);
 ```javascript
 const github = require('./github-notes');
 
-// 1. 创建临时分支
+// 1. 初始化
+github.init({
+  token: 'ghp_xxxxxxxx',
+  repo: 'wzxch/xcm-notes',
+  username: 'wzxch',
+  authorName: 'GitHub Notes Bot'
+});
+
+// 2. 创建临时分支
 await github.createBranch('note-topic-20250225');
 
-// 2. 创建/更新文件
+// 3. 创建/更新文件
 await github.createOrUpdateFile(
   'java/topic.md',
   '# 主题\n\n内容',
@@ -67,7 +89,7 @@ await github.createOrUpdateFile(
   'note-topic-20250225'
 );
 
-// 3. 创建 PR
+// 4. 创建 PR
 const pr = await github.createPullRequest(
   'note-topic-20250225',
   'Add: topic-20250225',
@@ -78,6 +100,12 @@ console.log('PR 链接:', pr.html_url);
 ```
 
 ## API 参考
+
+### init(config)
+- `config.token`: GitHub Personal Access Token
+- `config.repo`: 仓库名，格式 `owner/repo`
+- `config.username`: GitHub 用户名
+- `config.authorName`: Git commit 作者名（可选，默认 'GitHub Notes Bot'）
 
 ### readFile(path, branch?)
 - `path`: 文件路径（相对于仓库根目录）

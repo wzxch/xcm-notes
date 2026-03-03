@@ -1,12 +1,40 @@
 /**
  * GitHub Notes API 操作模块
  * 提供读取、创建、更新文件和分支管理功能
+ * 
+ * 支持两种配置方式：
+ * 1. 环境变量：GITHUB_TOKEN, GITHUB_REPO, GITHUB_USERNAME, GITHUB_AUTHOR_NAME
+ * 2. init() 方法：传入配置对象
  */
 
 const GITHUB_API = 'https://api.github.com';
 
-// 从环境变量获取配置
-function getConfig() {
+// 模块级配置存储
+let moduleConfig = null;
+
+/**
+ * 初始化配置
+ * @param {Object} config - 配置对象
+ * @param {string} config.token - GitHub Personal Access Token
+ * @param {string} config.repo - 仓库名，如：wzxch/xcm-notes
+ * @param {string} config.username - GitHub 用户名
+ * @param {string} [config.authorName] - Git commit 作者名（可选）
+ */
+function init(config) {
+  if (!config || !config.token || !config.repo || !config.username) {
+    throw new Error('init() 需要提供 token, repo, username');
+  }
+  moduleConfig = {
+    authorName: 'GitHub Notes Bot',
+    ...config
+  };
+}
+
+/**
+ * 从环境变量获取配置
+ * @returns {Object} 配置对象
+ */
+function getConfigFromEnv() {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
   const username = process.env.GITHUB_USERNAME;
@@ -17,6 +45,17 @@ function getConfig() {
   }
 
   return { token, repo, username, authorName };
+}
+
+/**
+ * 获取当前配置（优先使用 init() 设置的配置，否则从环境变量读取）
+ * @returns {Object} 配置对象
+ */
+function getConfig() {
+  if (moduleConfig) {
+    return moduleConfig;
+  }
+  return getConfigFromEnv();
 }
 
 // 构建请求头
@@ -308,6 +347,7 @@ async function listAllFiles(path = '', branch = 'main') {
 }
 
 module.exports = {
+  init,
   readFile,
   listDirectory,
   listAllFiles,
